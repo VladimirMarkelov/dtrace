@@ -9,7 +9,6 @@ inline int MIN_MS = 1;
 
 dtrace:::BEGIN
 {
-        @readbytes=sum(0);
         @writebytes=sum(0);
         wrl_max=0
 }
@@ -49,23 +48,13 @@ io:::start
         @writebytes = sum(args[0]->b_bcount);
 }
 
-io:::start
-/in_spa_sync && (args[0]->b_flags & 0x40)/
-{
-        @readio = sum(1);
-        @readbytes = sum(args[0]->b_bcount);
-}
-
-
 tick-1sec
 {
         normalize(@writebytes, 1048576);
-        normalize(@readbytes, 1048576);
         normalize(@reserved_max, wrl_max);
-        printf("%Y, %d, ",walltimestamp,in_spa_sync);
-        printa("%@d wMB, %@d rMB, %@d wIo, %@d rIo, %@d dly, %@d thr, %@d pct \n",
-                @writebytes, @readbytes, @writeio, @readio, @delays, @throttles, @reserved_max);
-        clear(@writebytes); clear(@readbytes); clear(@writeio); clear(@readio); clear(@delays); clear(@throttles); wrl_max=0;
+        printf("%Y,",walltimestamp);
+        printa("%@d,%@d,%@d,%@d,%@d\n", @writebytes, @writeio, @delays, @throttles, @reserved_max);
+        clear(@writebytes); clear(@writeio); clear(@delays); clear(@throttles); wrl_max=0;
 }
 
 
